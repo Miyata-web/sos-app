@@ -4,6 +4,15 @@
 const SPREADSHEET_ID = '1JTk_Bra0tgfhc1Af1FAXkPiZGma-y_z7-6RKVV80SWc';
 const SHEET_NAME     = 'SOS記録';
 
+// ntfy.sh トピック（病棟ごとに固有の名前を設定）
+const NTFY_TOPICS = {
+  '4階病棟': 'sos-byoin-4f',
+  '5階病棟': 'sos-byoin-5f',
+  '6階病棟': 'sos-byoin-6f',
+  '7階病棟': 'sos-byoin-7f',
+  '8階病棟': 'sos-byoin-8f'
+};
+
 // メール通知（使う場合はコメントを外してアドレスを設定）
 // const NOTIFY_EMAIL = 'your-email@example.com';
 
@@ -25,8 +34,12 @@ function doPost(e) {
       new Date()                  // 記録時刻
     ]);
 
-    // 通知（必要に応じてコメントを外す）
+    // ntfy.sh プッシュ通知
+    sendNtfy(data);
+
+    // メール通知（使う場合はコメントを外す）
     // sendEmail(data);
+    // Slack通知（使う場合はコメントを外す）
     // sendSlack(data);
 
     return jsonResponse({ success: true });
@@ -92,6 +105,25 @@ function getOrCreateSheet() {
   }
 
   return sheet;
+}
+
+// ============================================================
+// ntfy.sh プッシュ通知
+// ============================================================
+function sendNtfy(data) {
+  const topic = NTFY_TOPICS[data.ward];
+  if (!topic) return;
+  const room = data.roomNumber === '不明/緊急' ? '緊急（部屋不明）' : data.roomNumber + '号室';
+  UrlFetchApp.fetch(`https://ntfy.sh/${topic}`, {
+    method:  'POST',
+    headers: {
+      'Title':    `🚨 SOS発生 — ${data.ward}`,
+      'Message':  `${room}`,
+      'Priority': 'urgent',
+      'Tags':     'rotating_light'
+    },
+    payload: `${data.ward} / ${room}`
+  });
 }
 
 // ============================================================
