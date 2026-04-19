@@ -22,7 +22,6 @@ function doPost(e) {
       new Date(data.timestamp),   // 発生時刻
       data.ward        || '',     // 病棟
       data.roomNumber  || '',     // 部屋番号
-      data.staffName   || '',     // スタッフ名
       new Date()                  // 記録時刻
     ]);
 
@@ -55,9 +54,9 @@ function doGet(e) {
     const events = [];
 
     for (let i = 1; i < rows.length; i++) {
-      const [timestamp, rowWard, roomNumber, staffName] = rows[i];
+      const [timestamp, rowWard, roomNumber] = rows[i];
       if (rowWard === ward && new Date(timestamp) > since) {
-        events.push({ timestamp, ward: rowWard, roomNumber, staffName });
+        events.push({ timestamp, ward: rowWard, roomNumber });
       }
     }
 
@@ -80,8 +79,8 @@ function getOrCreateSheet() {
 
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    const header = sheet.getRange(1, 1, 1, 5);
-    header.setValues([['発生時刻', '病棟', '部屋番号', 'スタッフ名', '記録時刻']]);
+    const header = sheet.getRange(1, 1, 1, 4);
+    header.setValues([['発生時刻', '病棟', '部屋番号', '記録時刻']]);
     header.setBackground('#b71c1c');
     header.setFontColor('#ffffff');
     header.setFontWeight('bold');
@@ -89,8 +88,7 @@ function getOrCreateSheet() {
     sheet.setColumnWidth(1, 160);
     sheet.setColumnWidth(2, 120);
     sheet.setColumnWidth(3, 100);
-    sheet.setColumnWidth(4, 140);
-    sheet.setColumnWidth(5, 160);
+    sheet.setColumnWidth(4, 160);
   }
 
   return sheet;
