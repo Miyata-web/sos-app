@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>院内SOS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    input { -webkit-user-select: text; user-select: text; }
+
+    .screen { display: none; flex-direction: column; min-height: 100dvh; }
+    .screen.active { display: flex; }
+
+    /* SOSボタン長押しプログレス */
+    #sos-btn {
+      position: relative;
+      background: conic-gradient(#ef4444 0%, #ef4444 var(--progress, 0%), #7f1d1d var(--progress, 0%));
+      transition: box-shadow 0.1s;
+    }
+    #sos-btn.holding {
+      box-shadow: 0 0 0 8px rgba(239,68,68,0.4), 0 0 0 16px rgba(239,68,68,0.2);
+    }
+    #sos-btn.fired {
+      background: #16a34a;
+    }
+
+    /* 部屋ボタン押下フィードバック */
+    .room-btn:active {
+      background-color: #dc2626 !important;
+      transform: scale(0.94);
+      color: white;
+    }
+    .room-btn { transition: transform 0.08s, background-color 0.08s; }
+
+    /* 送信完了オーバーレイ */
+    #success-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(22, 163, 74, 0.97);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    }
+    #success-overlay.show { opacity: 1; pointer-events: all; }
+
+    /* 受信アラートオーバーレイ */
+    #alert-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: #7f1d1d;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    #alert-overlay.show { opacity: 1; pointer-events: all; }
+
+    @keyframes flash {
+      0%, 100% { background: #7f1d1d; }
+      50% { background: #dc2626; }
+    }
+    #alert-overlay.show { animation: flash 0.8s ease-in-out infinite; }
+
+    /* ポーリングインジケーター */
+    @keyframes ping {
+      0% { transform: scale(1); opacity: 1; }
+      75%, 100% { transform: scale(2); opacity: 0; }
+    }
+    .ping { animation: ping 1.5s cubic-bezier(0,0,0.2,1) infinite; }
+  </style>
+</head>
+<body class="bg-gray-950 text-white">
+
+  <!-- ===== 設定画面 ===== -->
+  <div id="screen-settings" class="screen active px-5 pt-8 pb-6 gap-6 overflow-y-auto">
+    <h1 class="text-2xl font-black text-center tracking-widest">⚙️ 初期設定</h1>
+
+    <!-- スタッフ名 -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">スタッフ名</label>
+      <input id="input-name" type="text" inputmode="text"
+        class="w-full bg-gray-800 text-white text-xl px-4 py-4 rounded-2xl border border-gray-700 outline-none focus:border-blue-500"
+        placeholder="例：山田 花子">
+    </div>
+
+    <!-- 病棟選択 -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">病棟選択</label>
+      <div id="ward-selector" class="grid grid-cols-1 gap-3"></div>
+    </div>
+
+    <!-- 長押し時間 -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">SOSボタン長押し時間</label>
+      <div class="grid grid-cols-4 gap-2" id="hold-selector">
+        <button onclick="selectHold(500)"  data-ms="500"  class="hold-opt py-3 rounded-xl text-sm font-bold bg-gray-800">0.5秒</button>
+        <button onclick="selectHold(1000)" data-ms="1000" class="hold-opt py-3 rounded-xl text-sm font-bold bg-blue-600">1秒</button>
+        <button onclick="selectHold(1500)" data-ms="1500" class="hold-opt py-3 rounded-xl text-sm font-bold bg-gray-800">1.5秒</button>
+        <button onclick="selectHold(2000)" data-ms="2000" class="hold-opt py-3 rounded-xl text-sm font-bold bg-gray-800">2秒</button>
+      </div>
+    </div>
+
+    <!-- モード選択 -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">このiPhoneの役割</label>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="selectMode('sender')" id="mode-sender"
+          class="py-4 rounded-2xl font-bold text-lg bg-blue-600">📤 送信</button>
+        <button onclick="selectMode('receiver')" id="mode-receiver"
+          class="py-4 rounded-2xl font-bold text-lg bg-gray-800">📥 受信</button>
+      </div>
+      <p class="text-xs text-gray-500">送信＝ハラスメントに遭ったスタッフ用　受信＝管理者・応援用</p>
+    </div>
+
+    <!-- 保存ボタン -->
+    <button onclick="saveSettings()"
+      class="w-full bg-blue-600 active:bg-blue-700 text-white text-xl font-black py-5 rounded-2xl mt-2">
+      設定を保存して開始
+    </button>
+  </div>
+
+  <!-- ===== 送信画面 ===== -->
+  <div id="screen-sender" class="screen">
+
+    <!-- Sticky ヘッダー（SOSボタン） -->
+    <div class="sticky top-0 z-50 bg-gray-950 px-4 pt-4 pb-3 border-b border-gray-800">
+      <div class="flex justify-between items-center mb-3">
+        <div class="text-sm text-gray-400">
+          <span id="disp-ward" class="font-bold text-white"></span>
+        </div>
+        <button onclick="goSettings()" class="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">設定</button>
+        <div class="text-sm text-gray-400">
+          <span id="disp-name"></span>
+        </div>
+      </div>
+
+      <!-- SOSボタン -->
+      <div class="flex flex-col items-center gap-2">
+        <button id="sos-btn"
+          class="w-40 h-40 rounded-full text-white text-5xl font-black shadow-2xl select-none"
+          style="touch-action: none;">
+          SOS
+        </button>
+        <p class="text-xs text-gray-500">長押しで緊急SOS（部屋番号なし）</p>
+      </div>
+    </div>
+
+    <!-- 部屋番号リスト -->
+    <div class="flex-1 overflow-y-auto px-4 pt-4 pb-8">
+      <p class="text-gray-500 text-xs mb-3">▼ 部屋をタップ → 即時送信</p>
+      <div id="room-list" class="grid grid-cols-3 gap-3"></div>
+    </div>
+  </div>
+
+  <!-- ===== 受信画面 ===== -->
+  <div id="screen-receiver" class="screen px-4 pt-6 pb-6 gap-4 overflow-y-auto">
+    <div class="flex justify-between items-center">
+      <h2 class="text-xl font-black">📥 受信モード</h2>
+      <button onclick="goSettings()" class="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">設定</button>
+    </div>
+
+    <div id="recv-ward-label" class="text-gray-400 text-sm"></div>
+
+    <!-- 監視状態インジケーター -->
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 flex items-center gap-4">
+      <div class="relative flex h-4 w-4">
+        <span class="ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+      </div>
+      <div>
+        <p class="text-green-400 text-sm font-bold">監視中</p>
+        <p class="text-gray-500 text-xs">5秒ごとに自動確認</p>
+      </div>
+    </div>
+
+    <!-- SOS履歴 -->
+    <div>
+      <p class="text-gray-500 text-xs mb-2">受信履歴</p>
+      <div id="sos-history">
+        <p class="text-gray-600 text-sm text-center py-8">SOSはまだ届いていません</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 送信完了オーバーレイ ===== -->
+  <div id="success-overlay">
+    <p class="text-8xl mb-2">✅</p>
+    <p class="text-5xl font-black text-white">送信完了</p>
+    <p id="success-room" class="text-2xl text-green-200 mt-4"></p>
+  </div>
+
+  <!-- ===== 受信アラートオーバーレイ ===== -->
+  <div id="alert-overlay">
+    <p class="text-7xl mb-2">🚨</p>
+    <p class="text-6xl font-black text-white mb-6">SOS!</p>
+    <div id="alert-body" class="text-2xl text-red-200 text-center space-y-2 mb-10 px-6"></div>
+    <button onclick="dismissAlert()"
+      class="bg-white text-red-800 text-2xl font-black px-12 py-5 rounded-3xl shadow-xl">
+      確認しました
+    </button>
+  </div>
+
+  <script>
+    // ============================================================
+    // GAS エンドポイント（デプロイ後にここを書き換える）
+    // ============================================================
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxgi4t9uzpVO2d5E6aad9BSdVKNIjnyXJl0Npm29xBwIQy411bu8WevwJ_O_4P4UCU/exec';
+
+    // ============================================================
+    // 病棟・部屋番号データ
+    // ============================================================
+    const WARDS = {
+      '4階病棟': [401,402,403,405,406,407,408,410,411,412,413,415,416,417,418,430,431,432,433,435,436,437,438],
+      '5階病棟': [501,502,503,505,506,507,508,510,511,512,513,515,516,517,518,520,521,522,523,525,526,527,528],
+      '6階病棟': [601,602,603,605,606,607,608,610,611,612,613,615,616,617,618,620,621,622,623,625,626,627,628],
+      '7階病棟': [701,702,703,705,706,707,708,710,712,713,715,716,717,718,720,721,722,723,725,726,727,728],
+      '8階病棟': [801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823]
+    };
+
+    // ============================================================
+    // 状態
+    // ============================================================
+    let cfg = { staffName: '', ward: '', holdMs: 1000, mode: 'sender' };
+    let holdTimer = null;
+    let holdRaf = null;
+    let holdStart = null;
+    let polling = null;
+    let lastCheck = null;
+
+    // ============================================================
+    // 初期化
+    // ============================================================
+    function init() {
+      buildWardSelector();
+
+      const saved = localStorage.getItem('sos-cfg');
+      if (saved) {
+        cfg = JSON.parse(saved);
+        applyDisplayValues();
+        if (cfg.mode === 'receiver') {
+          showScreen('receiver');
+          startPolling();
+        } else {
+          showScreen('sender');
+        }
+      } else {
+        showScreen('settings');
+      }
+
+      initSosBtn();
+    }
+
+    // ============================================================
+    // 設定画面
+    // ============================================================
+    function buildWardSelector() {
+      const el = document.getElementById('ward-selector');
+      Object.keys(WARDS).forEach(w => {
+        const btn = document.createElement('button');
+        btn.dataset.ward = w;
+        btn.textContent = w;
+        btn.className = 'ward-opt py-4 rounded-2xl font-bold text-lg bg-gray-800 text-left px-5';
+        btn.onclick = () => selectWard(w);
+        el.appendChild(btn);
+      });
+    }
+
+    function selectWard(w) {
+      cfg.ward = w;
+      document.querySelectorAll('.ward-opt').forEach(b =>
+        b.className = b.dataset.ward === w
+          ? 'ward-opt py-4 rounded-2xl font-bold text-lg bg-blue-600 text-left px-5'
+          : 'ward-opt py-4 rounded-2xl font-bold text-lg bg-gray-800 text-left px-5'
+      );
+    }
+
+    function selectHold(ms) {
+      cfg.holdMs = ms;
+      document.querySelectorAll('.hold-opt').forEach(b =>
+        b.className = parseInt(b.dataset.ms) === ms
+          ? 'hold-opt py-3 rounded-xl text-sm font-bold bg-blue-600'
+          : 'hold-opt py-3 rounded-xl text-sm font-bold bg-gray-800'
+      );
+    }
+
+    function selectMode(m) {
+      cfg.mode = m;
+      document.getElementById('mode-sender').className =
+        m === 'sender' ? 'py-4 rounded-2xl font-bold text-lg bg-blue-600'
+                       : 'py-4 rounded-2xl font-bold text-lg bg-gray-800';
+      document.getElementById('mode-receiver').className =
+        m === 'receiver' ? 'py-4 rounded-2xl font-bold text-lg bg-blue-600'
+                         : 'py-4 rounded-2xl font-bold text-lg bg-gray-800';
+    }
+
+    function saveSettings() {
+      const name = document.getElementById('input-name').value.trim();
+      if (!name)     { alert('スタッフ名を入力してください'); return; }
+      if (!cfg.ward) { alert('病棟を選択してください'); return; }
+      cfg.staffName = name;
+      localStorage.setItem('sos-cfg', JSON.stringify(cfg));
+      applyDisplayValues();
+      stopPolling();
+      if (cfg.mode === 'receiver') {
+        showScreen('receiver');
+        startPolling();
+      } else {
+        showScreen('sender');
+      }
+    }
+
+    function goSettings() {
+      stopPolling();
+      document.getElementById('input-name').value = cfg.staffName;
+      selectWard(cfg.ward);
+      selectHold(cfg.holdMs);
+      selectMode(cfg.mode);
+      showScreen('settings');
+    }
+
+    function applyDisplayValues() {
+      document.getElementById('disp-ward').textContent = cfg.ward;
+      document.getElementById('disp-name').textContent = cfg.staffName;
+      document.getElementById('recv-ward-label').textContent = `監視病棟：${cfg.ward}`;
+      buildRoomList();
+    }
+
+    // ============================================================
+    // 部屋番号リスト生成
+    // ============================================================
+    function buildRoomList() {
+      const list = document.getElementById('room-list');
+      list.innerHTML = '';
+      (WARDS[cfg.ward] || []).forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = 'room-btn bg-gray-800 border border-gray-700 text-white text-2xl font-black py-5 rounded-2xl';
+        btn.style.touchAction = 'manipulation';
+        btn.textContent = r;
+        btn.addEventListener('click', () => sendSOS(String(r)));
+        list.appendChild(btn);
+      });
+    }
+
+    // ============================================================
+    // SOSボタン 長押し処理
+    // ============================================================
+    function initSosBtn() {
+      const btn = document.getElementById('sos-btn');
+
+      function onStart(e) {
+        e.preventDefault();
+        if (holdStart) return;
+        holdStart = performance.now();
+        btn.classList.add('holding');
+
+        function tick() {
+          if (!holdStart) return;
+          const elapsed = performance.now() - holdStart;
+          const pct = Math.min(elapsed / cfg.holdMs * 100, 100);
+          btn.style.setProperty('--progress', pct + '%');
+          if (elapsed >= cfg.holdMs) {
+            triggerSosBtn();
+          } else {
+            holdRaf = requestAnimationFrame(tick);
+          }
+        }
+        holdRaf = requestAnimationFrame(tick);
+      }
+
+      function onEnd(e) {
+        e.preventDefault();
+        cancelHold();
+      }
+
+      btn.addEventListener('touchstart', onStart, { passive: false });
+      btn.addEventListener('touchend', onEnd,   { passive: false });
+      btn.addEventListener('touchcancel', onEnd, { passive: false });
+      btn.addEventListener('mousedown', onStart);
+      btn.addEventListener('mouseup', onEnd);
+      btn.addEventListener('mouseleave', onEnd);
+    }
+
+    function triggerSosBtn() {
+      cancelHold();
+      document.getElementById('sos-btn').classList.add('fired');
+      setTimeout(() => document.getElementById('sos-btn').classList.remove('fired'), 600);
+      sendSOS('不明/緊急');
+    }
+
+    function cancelHold() {
+      holdStart = null;
+      cancelAnimationFrame(holdRaf);
+      const btn = document.getElementById('sos-btn');
+      btn.classList.remove('holding');
+      btn.style.setProperty('--progress', '0%');
+    }
+
+    // ============================================================
+    // SOS送信
+    // ============================================================
+    async function sendSOS(roomNumber) {
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+
+      const payload = {
+        staffName:  cfg.staffName,
+        ward:       cfg.ward,
+        roomNumber: roomNumber,
+        timestamp:  new Date().toISOString()
+      };
+
+      showSuccess(roomNumber);
+
+      try {
+        await fetch(GAS_URL, {
+          method:  'POST',
+          mode:    'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body:    JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('送信エラー:', err);
+      }
+    }
+
+    function showSuccess(room) {
+      const ov = document.getElementById('success-overlay');
+      document.getElementById('success-room').textContent =
+        room === '不明/緊急' ? '緊急SOS（部屋番号なし）' : `${room}号室`;
+      ov.classList.add('show');
+      setTimeout(() => ov.classList.remove('show'), 2500);
+    }
+
+    // ============================================================
+    // 受信モード：ポーリング
+    // ============================================================
+    function startPolling() {
+      lastCheck = new Date().toISOString();
+      checkForSOS();
+      polling = setInterval(checkForSOS, 5000);
+    }
+
+    function stopPolling() {
+      if (polling) { clearInterval(polling); polling = null; }
+    }
+
+    async function checkForSOS() {
+      if (!GAS_URL || GAS_URL === 'YOUR_GAS_WEB_APP_URL_HERE') return;
+      try {
+        const url = `${GAS_URL}?action=check&ward=${encodeURIComponent(cfg.ward)}&since=${encodeURIComponent(lastCheck)}`;
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.events && data.events.length > 0) {
+          lastCheck = new Date().toISOString();
+          showAlert(data.events[0]);
+          renderHistory(data.events);
+        }
+      } catch (err) {
+        console.error('ポーリングエラー:', err);
+      }
+    }
+
+    function showAlert(ev) {
+      if (navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,1000]);
+      const time = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
+      document.getElementById('alert-body').innerHTML = `
+        <p>🏥 ${ev.ward}</p>
+        <p>🚪 ${ev.roomNumber === '不明/緊急' ? ev.roomNumber : ev.roomNumber + '号室'}</p>
+        <p>👤 ${ev.staffName}</p>
+        <p>🕐 ${time}</p>
+      `;
+      document.getElementById('alert-overlay').classList.add('show');
+    }
+
+    function dismissAlert() {
+      document.getElementById('alert-overlay').classList.remove('show');
+    }
+
+    function renderHistory(events) {
+      const el = document.getElementById('sos-history');
+      el.innerHTML = events.slice(0, 20).map(ev => {
+        const t = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
+        const room = ev.roomNumber === '不明/緊急' ? ev.roomNumber : ev.roomNumber + '号室';
+        return `
+          <div class="bg-red-950 border border-red-800 rounded-2xl px-4 py-3 mb-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-bold text-red-300">${ev.ward} / ${room}</p>
+                <p class="text-sm text-gray-400 mt-1">👤 ${ev.staffName}</p>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">${t}</p>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ============================================================
+    // 画面切り替え
+    // ============================================================
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + name).classList.add('active');
+    }
+
+    // ============================================================
+    // 起動
+    // ============================================================
+    init();
+  </script>
+</body>
+</html>
