@@ -118,11 +118,11 @@ function sendNtfy(data) {
     method:  'POST',
     headers: {
       'Title':    `🚨 SOS発生 — ${data.ward}`,
-      'Message':  `${room}`,
       'Priority': 'urgent',
-      'Tags':     'rotating_light'
+      'Tags':     'rotating_light,sos',
+      'Sound':    'ding'
     },
-    payload: `${data.ward} / ${room}`
+    payload: `${room}に応援をお願いします`
   });
 }
 
