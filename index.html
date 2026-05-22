@@ -119,7 +119,7 @@
     <!-- 保存ボタン -->
     <button onclick="saveSettings()"
       class="w-full bg-blue-600 active:bg-blue-700 text-white text-xl font-black py-5 rounded-2xl mt-2">
-      設定を保存して開始
+      設定を保存
     </button>
 
     <!-- ショートカット設定ガイド（送信モード・保存後に表示） -->
@@ -192,6 +192,12 @@
           <p class="text-xs text-gray-500 mt-2">※ iPhoneの背面を3回タップするとSOSが発信されます</p>
         </div>
       </div>
+
+      <!-- 開始ボタン -->
+      <button onclick="startApp()"
+        class="w-full bg-green-600 active:bg-green-700 text-white text-xl font-black py-5 rounded-2xl">
+        ✅ 設定完了・開始する
+      </button>
 
     </div>
   </div>
@@ -385,13 +391,26 @@
       if (!cfg.extension) { alert('内線番号を入力してください'); return; }
       localStorage.setItem('sos-cfg', JSON.stringify(cfg));
       applyDisplayValues();
+      if (cfg.mode === 'receiver') {
+        // 受信モードはガイド不要・即開始
+        document.getElementById('shortcut-guide').classList.add('hidden');
+        startApp();
+      } else {
+        // 送信モードはガイドを表示して待つ
+        showShortcutGuide();
+        // 画面下までスクロール
+        setTimeout(() => {
+          document.getElementById('shortcut-guide').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+
+    function startApp() {
       stopPolling();
       if (cfg.mode === 'receiver') {
-        document.getElementById('shortcut-guide').classList.add('hidden');
         showScreen('receiver');
         startPolling();
       } else {
-        showShortcutGuide();
         showScreen('sender');
       }
     }
