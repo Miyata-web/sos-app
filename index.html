@@ -121,6 +121,79 @@
       class="w-full bg-blue-600 active:bg-blue-700 text-white text-xl font-black py-5 rounded-2xl mt-2">
       設定を保存して開始
     </button>
+
+    <!-- ショートカット設定ガイド（送信モード・保存後に表示） -->
+    <div id="shortcut-guide" class="hidden space-y-4 pb-6">
+
+      <!-- URL表示 -->
+      <div class="space-y-2">
+        <p class="text-sm text-gray-400 font-bold">📲 ショートカット設定用URL</p>
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-3">
+          <p class="text-xs text-gray-400">このURLをショートカットアプリに登録してください</p>
+          <p id="shortcut-url-text" class="text-xs text-blue-300 break-all leading-relaxed"></p>
+          <button onclick="copyShortcutUrl()"
+            class="w-full bg-blue-600 active:bg-blue-700 text-white text-sm font-bold py-3 rounded-xl">
+            📋 URLをコピー
+          </button>
+        </div>
+      </div>
+
+      <!-- ショートカット登録手順 -->
+      <div class="space-y-2">
+        <p class="text-sm text-gray-400 font-bold">🔧 ショートカットアプリの設定手順</p>
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3 text-sm">
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">1</span>
+            <p class="text-gray-300">「ショートカット」アプリを開く</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">2</span>
+            <p class="text-gray-300">右上の「＋」をタップ</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">3</span>
+            <p class="text-gray-300">「アクションを追加」→ 検索欄に「<span class="text-white font-bold">URLの内容を取得</span>」と入力して選択</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">4</span>
+            <p class="text-gray-300">URL欄に上のURLを貼り付ける</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">5</span>
+            <p class="text-gray-300">「方法」を <span class="text-white font-bold">GET</span> に変更</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">6</span>
+            <p class="text-gray-300">右上でショートカット名を「<span class="text-white font-bold">院内SOS緊急</span>」に変更 →「完了」</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- バックタップ設定手順 -->
+      <div class="space-y-2">
+        <p class="text-sm text-gray-400 font-bold">👆 バックタップの設定手順</p>
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3 text-sm">
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">1</span>
+            <p class="text-gray-300">「設定」アプリを開く</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">2</span>
+            <p class="text-gray-300">「アクセシビリティ」→「タッチ」→「<span class="text-white font-bold">バックタップ</span>」を選択</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">3</span>
+            <p class="text-gray-300">「<span class="text-white font-bold">トリプルタップ</span>」を選択</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">4</span>
+            <p class="text-gray-300">一覧から「<span class="text-white font-bold">院内SOS緊急</span>」を選択</p>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">※ iPhoneの背面を3回タップするとSOSが発信されます</p>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- ===== 送信画面 ===== -->
@@ -314,9 +387,11 @@
       applyDisplayValues();
       stopPolling();
       if (cfg.mode === 'receiver') {
+        document.getElementById('shortcut-guide').classList.add('hidden');
         showScreen('receiver');
         startPolling();
       } else {
+        showShortcutGuide();
         showScreen('sender');
       }
     }
@@ -327,7 +402,25 @@
       selectHold(cfg.holdMs);
       selectMode(cfg.mode);
       document.getElementById('input-extension').value = cfg.extension || '';
+      if (cfg.mode === 'sender' && cfg.ward && cfg.extension) {
+        showShortcutGuide();
+      }
       showScreen('settings');
+    }
+
+    function showShortcutGuide() {
+      const url = `${GAS_URL}?action=sos&ward=${encodeURIComponent(cfg.ward)}&roomNumber=${encodeURIComponent('不明/緊急')}&extension=${encodeURIComponent(cfg.extension)}`;
+      document.getElementById('shortcut-url-text').textContent = url;
+      document.getElementById('shortcut-guide').classList.remove('hidden');
+    }
+
+    function copyShortcutUrl() {
+      const url = document.getElementById('shortcut-url-text').textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target;
+        btn.textContent = '✅ コピーしました';
+        setTimeout(() => { btn.textContent = '📋 URLをコピー'; }, 2000);
+      });
     }
 
     function applyDisplayValues() {
