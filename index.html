@@ -64,6 +64,9 @@
       75%, 100% { transform: scale(2); opacity: 0; }
     }
     .ping { animation: ping 1.5s cubic-bezier(0,0,0.2,1) infinite; }
+
+    /* 内線番号入力（テキスト選択許可） */
+    #input-extension { -webkit-user-select: text; user-select: text; }
   </style>
 </head>
 <body class="bg-gray-950 text-white">
@@ -76,6 +79,15 @@
     <div class="space-y-2">
       <label class="text-sm text-gray-400 font-bold">病棟選択</label>
       <div id="ward-selector" class="grid grid-cols-1 gap-3"></div>
+    </div>
+
+    <!-- 内線番号 -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">このiPhoneの内線番号</label>
+      <input id="input-extension" type="tel" inputmode="numeric" placeholder="例：1234"
+        class="w-full bg-gray-800 border border-gray-600 text-white text-xl font-bold px-4 py-4 rounded-2xl focus:outline-none focus:border-blue-500"
+        oninput="cfg.extension = this.value.trim()">
+      <p class="text-xs text-gray-500">Nsステーションの端末管理表に対応する内線番号を入力</p>
     </div>
 
     <!-- 長押し時間 -->
@@ -114,8 +126,9 @@
     <!-- Sticky ヘッダー（SOSボタン） -->
     <div class="sticky top-0 z-50 bg-gray-950 px-4 pt-4 pb-3 border-b border-gray-800">
       <div class="flex justify-between items-center mb-3">
-        <div class="text-sm text-gray-400">
-          <span id="disp-ward" class="font-bold text-white"></span>
+        <div class="text-sm text-gray-400 space-y-0.5">
+          <div><span id="disp-ward" class="font-bold text-white"></span></div>
+          <div>内線：<span id="disp-extension" class="font-bold text-yellow-400"></span></div>
         </div>
         <button onclick="goSettings()" class="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">設定</button>
       </div>
@@ -173,6 +186,7 @@
     <p class="text-8xl mb-2">✅</p>
     <p class="text-5xl font-black text-white">送信完了</p>
     <p id="success-room" class="text-2xl text-green-200 mt-4"></p>
+    <p id="success-ext"  class="text-lg text-green-300 mt-2"></p>
   </div>
 
   <!-- ===== 受信アラートオーバーレイ ===== -->
@@ -188,7 +202,7 @@
 
   <script>
     // ============================================================
-    // GAS エンドポイント（デプロイ後にここを書き換える）
+    // GAS エンドポイント
     // ============================================================
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
 
@@ -206,7 +220,7 @@
     // ============================================================
     // 状態
     // ============================================================
-    let cfg = { ward: '', holdMs: 1000, mode: 'sender' };
+    let cfg = { ward: '', extension: '', holdMs: 1000, mode: 'sender' };
     let holdTimer = null;
     let holdRaf = null;
     let holdStart = null;
@@ -281,6 +295,7 @@
 
     function saveSettings() {
       if (!cfg.ward) { alert('病棟を選択してください'); return; }
+      if (!cfg.extension) { alert('内線番号を入力してください'); return; }
       localStorage.setItem('sos-cfg', JSON.stringify(cfg));
       applyDisplayValues();
       stopPolling();
@@ -297,11 +312,13 @@
       selectWard(cfg.ward);
       selectHold(cfg.holdMs);
       selectMode(cfg.mode);
+      document.getElementById('input-extension').value = cfg.extension || '';
       showScreen('settings');
     }
 
     function applyDisplayValues() {
       document.getElementById('disp-ward').textContent = cfg.ward;
+      document.getElementById('disp-extension').textContent = cfg.extension || '未設定';
       document.getElementById('recv-ward-label').textContent = `監視病棟：${cfg.ward}`;
       buildRoomList();
     }
@@ -385,6 +402,7 @@
       const payload = {
         ward:       cfg.ward,
         roomNumber: roomNumber,
+        extension:  cfg.extension || '',
         timestamp:  new Date().toISOString()
       };
 
@@ -406,6 +424,8 @@
       const ov = document.getElementById('success-overlay');
       document.getElementById('success-room').textContent =
         room === '不明/緊急' ? '緊急SOS（部屋番号なし）' : `${room}号室`;
+      document.getElementById('success-ext').textContent =
+        cfg.extension ? `内線 ${cfg.extension}` : '';
       ov.classList.add('show');
       setTimeout(() => ov.classList.remove('show'), 2500);
     }
@@ -442,9 +462,12 @@
     function showAlert(ev) {
       if (navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,1000]);
       const time = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
+      const room = ev.roomNumber === '不明/緊急' ? '部屋番号不明' : ev.roomNumber + '号室';
+      const ext  = ev.extension ? `📞 内線 ${ev.extension}` : '';
       document.getElementById('alert-body').innerHTML = `
         <p>🏥 ${ev.ward}</p>
-        <p>🚪 ${ev.roomNumber === '不明/緊急' ? ev.roomNumber : ev.roomNumber + '号室'}</p>
+        <p>🚪 ${room}</p>
+        ${ext ? `<p>${ext}</p>` : ''}
         <p>🕐 ${time}</p>
       `;
       document.getElementById('alert-overlay').classList.add('show');
@@ -457,13 +480,15 @@
     function renderHistory(events) {
       const el = document.getElementById('sos-history');
       el.innerHTML = events.slice(0, 20).map(ev => {
-        const t = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
-        const room = ev.roomNumber === '不明/緊急' ? ev.roomNumber : ev.roomNumber + '号室';
+        const t    = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
+        const room = ev.roomNumber === '不明/緊急' ? '部屋番号不明' : ev.roomNumber + '号室';
+        const ext  = ev.extension ? `内線 ${ev.extension}` : '';
         return `
           <div class="bg-red-950 border border-red-800 rounded-2xl px-4 py-3 mb-3">
             <div class="flex justify-between items-start">
               <div>
                 <p class="font-bold text-red-300">${ev.ward} / ${room}</p>
+                ${ext ? `<p class="text-yellow-400 text-sm font-bold">${ext}</p>` : ''}
               </div>
               <p class="text-xs text-gray-500 mt-1">${t}</p>
             </div>
