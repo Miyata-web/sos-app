@@ -75,19 +75,14 @@ function getOrCreateSheet() {
 }
 
 function sendNtfy(data) {
-  const topic = NTFY_TOPICS[data.ward];
-  if (!topic) return;
-  const room = data.roomNumber === '不明/緊急' ? '緊急（部屋不明）' : data.roomNumber + '号室';
-  const ext  = data.extension ? ' 内線' + data.extension : '';
-  UrlFetchApp.fetch('https://ntfy.sh/' + topic, {
-    method:  'POST',
-    headers: {
-      'Title':    '🚨 SOS発生 — ' + data.ward,
-      'Priority': 'urgent',
-      'Tags':     'rotating_light,sos',
-      'Sound':    'ding'
-    },
-    payload: room + ext + 'に応援をお願いします'
+  UrlFetchApp.fetch('https://sos-ntfy-proxy.mx1vm1122.workers.dev/', {
+    method:      'POST',
+    contentType: 'application/json',
+    payload:     JSON.stringify({
+      ward:       data.ward       || '',
+      roomNumber: data.roomNumber || '不明/緊急',
+      extension:  data.extension  || ''
+    })
   });
 }
 
