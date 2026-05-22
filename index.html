@@ -237,6 +237,17 @@
       if (saved) {
         cfg = JSON.parse(saved);
         applyDisplayValues();
+
+        // ショートカットから ?sos=1 で起動された場合は即時送信
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('sos') === '1') {
+          history.replaceState(null, '', window.location.pathname);
+          showScreen('sender');
+          initSosBtn();
+          sendSOS('不明/緊急');
+          return;
+        }
+
         if (cfg.mode === 'receiver') {
           showScreen('receiver');
           startPolling();
