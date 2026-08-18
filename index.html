@@ -96,6 +96,17 @@
       </p>
     </div>
 
+    <!-- 認証キー -->
+    <div class="space-y-2">
+      <label class="text-sm text-gray-400 font-bold">認証キー（担当者から配布）</label>
+      <input id="input-authkey" type="password" placeholder="担当者から配布された合言葉を貼り付け"
+        class="w-full bg-gray-800 border border-gray-600 text-white text-sm font-mono px-4 py-4 rounded-2xl focus:outline-none focus:border-blue-500"
+        oninput="cfg.authKey = this.value.trim()">
+      <p class="text-xs text-gray-500 leading-relaxed">
+        SOS送信の認証に使う長い文字列。端末に保存され、以降の送信で自動的に付与されます。
+      </p>
+    </div>
+
     <!-- 長押し時間 -->
     <div class="space-y-2">
       <label class="text-sm text-gray-400 font-bold">SOSボタン長押し時間</label>
@@ -128,55 +139,66 @@
     <!-- ショートカット設定ガイド（送信モード・保存後に表示） -->
     <div id="shortcut-guide" class="hidden space-y-4 pb-6">
 
-      <!-- URL・JSON表示 -->
+      <!-- URL・ヘッダ・JSON表示 -->
       <div class="space-y-2">
         <p class="text-sm text-gray-400 font-bold">📲 ショートカット設定用の値</p>
         <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-4">
 
           <div class="space-y-1">
             <p class="text-xs text-gray-400">① URL</p>
-            <p id="shortcut-url-text" class="text-sm text-blue-300 break-all">https://ntfy.sh</p>
-            <button onclick="copyText('https://ntfy.sh', this)"
+            <p class="text-sm text-blue-300 break-all">https://sos-ntfy-proxy.mx1vm1122.workers.dev/</p>
+            <button onclick="copyText('https://sos-ntfy-proxy.mx1vm1122.workers.dev/', this)"
               class="w-full bg-blue-600 active:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg mt-1">
               📋 URLをコピー
             </button>
           </div>
 
+          <div class="space-y-2">
+            <p class="text-xs text-gray-400">② ヘッダ（「ヘッダを追加」で1件登録）</p>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">キー</p>
+              <div class="flex gap-2 items-center">
+                <p class="flex-1 text-xs text-purple-300 break-all bg-gray-900 p-2 rounded">Authorization</p>
+                <button onclick="copyText('Authorization', this)"
+                  class="bg-purple-600 active:bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">値（Bearer + 認証キー）</p>
+              <div class="flex gap-2 items-center">
+                <p id="json-bearer" class="flex-1 text-xs text-purple-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-bearer').textContent, this)"
+                  class="bg-purple-600 active:bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+          </div>
+
           <div class="space-y-3">
-            <p class="text-xs text-gray-400">② JSON項目（「本文を要求」をJSONにして、項目ごとに追加）</p>
+            <p class="text-xs text-gray-400">③ JSON項目（「本文を要求」をJSONにして、項目ごとに追加）</p>
 
             <div class="space-y-1">
-              <p class="text-xs text-gray-500">topic（テキスト）</p>
+              <p class="text-xs text-gray-500">ward（テキスト）</p>
               <div class="flex gap-2 items-center">
-                <p id="json-topic" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
-                <button onclick="copyText(document.getElementById('json-topic').textContent, this)"
+                <p id="json-ward" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-ward').textContent, this)"
                   class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
               </div>
             </div>
 
             <div class="space-y-1">
-              <p class="text-xs text-gray-500">title（テキスト）</p>
+              <p class="text-xs text-gray-500">roomNumber（テキスト）</p>
               <div class="flex gap-2 items-center">
-                <p id="json-title" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
-                <button onclick="copyText(document.getElementById('json-title').textContent, this)"
+                <p id="json-room" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-room').textContent, this)"
                   class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
               </div>
             </div>
 
             <div class="space-y-1">
-              <p class="text-xs text-gray-500">message（テキスト）</p>
+              <p class="text-xs text-gray-500">extension（テキスト）</p>
               <div class="flex gap-2 items-center">
-                <p id="json-message" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
-                <button onclick="copyText(document.getElementById('json-message').textContent, this)"
-                  class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
-              </div>
-            </div>
-
-            <div class="space-y-1">
-              <p class="text-xs text-gray-500">priority（数字）</p>
-              <div class="flex gap-2 items-center">
-                <p id="json-priority" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded">5</p>
-                <button onclick="copyText('5', this)"
+                <p id="json-extension" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-extension').textContent, this)"
                   class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
               </div>
             </div>
@@ -204,7 +226,7 @@
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">4</span>
-            <p class="text-gray-300">URL欄に <span class="text-white font-bold">https://ntfy.sh</span> を<span class="text-yellow-400">手入力</span>（コピペ不可・書式付きはエラー）</p>
+            <p class="text-gray-300">URL欄に <span class="text-white font-bold">①のURL</span> を貼り付け（📋ボタンでコピーして貼付）</p>
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">5</span>
@@ -212,14 +234,18 @@
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">6</span>
-            <p class="text-gray-300">「本文を要求」で「<span class="text-white font-bold">JSON</span>」を選択</p>
+            <p class="text-gray-300">「ヘッダ」→「<span class="text-white font-bold">新規ヘッダを追加</span>」で<span class="text-white font-bold">②のキーと値</span>を登録（キー：<span class="text-purple-300">Authorization</span> / 値：<span class="text-purple-300">Bearer …</span>）</p>
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">7</span>
-            <p class="text-gray-300">「<span class="text-white font-bold">新規フィールドを追加</span>」で上の<span class="text-white font-bold">②の4項目</span>を1つずつ追加（topic・title・messageは「テキスト」、priorityは「数字」）。値は各📋ボタンでコピー</p>
+            <p class="text-gray-300">「本文を要求」で「<span class="text-white font-bold">JSON</span>」を選択</p>
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">8</span>
+            <p class="text-gray-300">「<span class="text-white font-bold">新規フィールドを追加</span>」で上の<span class="text-white font-bold">③の3項目</span>を「テキスト」で追加。値は各📋ボタンでコピー</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">9</span>
             <p class="text-gray-300">画面上部「URLの内容を取得」右の「<span class="text-white font-bold">∨</span>」をタップ → 名称を「<span class="text-white font-bold">院内SOS送信</span>」に変更 →「完了」</p>
           </div>
         </div>
@@ -377,8 +403,9 @@
     // ============================================================
     // エンドポイント設定
     // ============================================================
-    const GAS_URL  = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
-    const NTFY_URL = 'https://ntfy.sh';
+    const GAS_URL    = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
+    const NTFY_URL   = 'https://ntfy.sh';
+    const WORKER_URL = 'https://sos-ntfy-proxy.mx1vm1122.workers.dev/';
 
     // 病棟別 ntfy トピック
     const WARD_TOPICS = {
@@ -406,7 +433,7 @@
     // ============================================================
     // 状態
     // ============================================================
-    let cfg = { ward: '', extension: '', holdMs: 1000, mode: 'sender', receiveAllMode: 'off' };
+    let cfg = { ward: '', extension: '', holdMs: 1000, mode: 'sender', receiveAllMode: 'off', authKey: '' };
     let holdTimer = null;
     let holdRaf = null;
     let holdStart = null;
@@ -421,7 +448,7 @@
 
       const saved = localStorage.getItem('sos-cfg');
       if (saved) {
-        cfg = Object.assign({ receiveAllMode: 'off' }, JSON.parse(saved));
+        cfg = Object.assign({ receiveAllMode: 'off', authKey: '' }, JSON.parse(saved));
         applyDisplayValues();
 
         // ショートカットから ?sos=1 で起動された場合は即時送信
@@ -500,7 +527,8 @@
 
     function saveSettings() {
       if (!cfg.ward) { alert('病棟を選択してください'); return; }
-      if (!cfg.extension) { alert('内線番号を入力してください'); return; }
+      if (!cfg.extension) { alert('端末の識別名を入力してください'); return; }
+      if (!cfg.authKey)   { alert('認証キーを入力してください'); return; }
       localStorage.setItem('sos-cfg', JSON.stringify(cfg));
       applyDisplayValues();
       if (cfg.mode === 'receiver') {
@@ -534,18 +562,19 @@
       selectHold(cfg.holdMs);
       selectMode(cfg.mode);
       document.getElementById('input-extension').value = cfg.extension || '';
-      if (cfg.mode === 'sender' && cfg.ward && cfg.extension) {
+      document.getElementById('input-authkey').value   = cfg.authKey   || '';
+      if (cfg.mode === 'sender' && cfg.ward && cfg.extension && cfg.authKey) {
         showShortcutGuide();
       }
       showScreen('settings');
     }
 
     function showShortcutGuide() {
-      // ntfy へ直接POST する JSON項目（ショートカット用・病棟別トピック）
-      const topic = WARD_TOPICS[cfg.ward] || WARD_TOPICS['4階病棟'];
-      document.getElementById('json-topic').textContent   = topic;
-      document.getElementById('json-title').textContent   = 'SOS発生 ' + cfg.ward;
-      document.getElementById('json-message').textContent = '緊急応援をお願いします' + (cfg.extension ? ' 内線:' + cfg.extension : '');
+      // Worker経由で送信するJSON項目（ショートカット用）
+      document.getElementById('json-ward').textContent      = cfg.ward;
+      document.getElementById('json-room').textContent      = '不明/緊急';
+      document.getElementById('json-extension').textContent = cfg.extension || '';
+      document.getElementById('json-bearer').textContent    = 'Bearer ' + (cfg.authKey || '');
       document.getElementById('shortcut-guide').classList.remove('hidden');
     }
 
@@ -647,20 +676,15 @@
       // 送信完了を即表示（待たずに見せる）
       showSuccess(roomNumber);
 
-      // 1. ntfy へ直接送信（病棟トピック + 当直師長トピックへfan-out）
-      const wardTopic = WARD_TOPICS[ward] || WARD_TOPICS['4階病棟'];
-      const payloadBase = {
-        title:    'SOS発生 ' + ward,
-        message:  room + 'に応援をお願いします' + (extension ? ' 内線:' + extension : ''),
-        priority: 5,
-        tags:     ['rotating_light', 'sos']
-      };
-      [wardTopic, NIGHT_TOPIC].forEach(t => {
-        fetch(NTFY_URL, {
-          method: 'POST',
-          body: JSON.stringify(Object.assign({ topic: t }, payloadBase))
-        }).catch(err => console.error('ntfy送信エラー(' + t + '):', err));
-      });
+      // 1. Worker経由でntfyへ送信（Bearer Token認証）
+      fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': 'Bearer ' + (cfg.authKey || ''),
+        },
+        body: JSON.stringify({ ward, roomNumber, extension })
+      }).catch(err => console.error('Worker送信エラー:', err));
 
       // 2. GAS へログ記録（バックグラウンド）
       const params = new URLSearchParams({
