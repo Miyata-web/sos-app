@@ -1,0 +1,4 @@
+name = "sos-ntfy-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+account_id = "a681d4394ab667a0d79b3231a21a1303"

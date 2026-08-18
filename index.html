@@ -125,16 +125,61 @@
     <!-- ショートカット設定ガイド（送信モード・保存後に表示） -->
     <div id="shortcut-guide" class="hidden space-y-4 pb-6">
 
-      <!-- URL表示 -->
+      <!-- URL・JSON表示 -->
       <div class="space-y-2">
-        <p class="text-sm text-gray-400 font-bold">📲 ショートカット設定用URL</p>
-        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-3">
-          <p class="text-xs text-gray-400">このURLをショートカットアプリに登録してください</p>
-          <p id="shortcut-url-text" class="text-xs text-blue-300 break-all leading-relaxed"></p>
-          <button onclick="copyShortcutUrl()"
-            class="w-full bg-blue-600 active:bg-blue-700 text-white text-sm font-bold py-3 rounded-xl">
-            📋 URLをコピー
-          </button>
+        <p class="text-sm text-gray-400 font-bold">📲 ショートカット設定用の値</p>
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-4">
+
+          <div class="space-y-1">
+            <p class="text-xs text-gray-400">① URL</p>
+            <p id="shortcut-url-text" class="text-sm text-blue-300 break-all">https://ntfy.sh</p>
+            <button onclick="copyText('https://ntfy.sh', this)"
+              class="w-full bg-blue-600 active:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg mt-1">
+              📋 URLをコピー
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <p class="text-xs text-gray-400">② JSON項目（「本文を要求」をJSONにして、項目ごとに追加）</p>
+
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">topic（テキスト）</p>
+              <div class="flex gap-2 items-center">
+                <p id="json-topic" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-topic').textContent, this)"
+                  class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">title（テキスト）</p>
+              <div class="flex gap-2 items-center">
+                <p id="json-title" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-title').textContent, this)"
+                  class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">message（テキスト）</p>
+              <div class="flex gap-2 items-center">
+                <p id="json-message" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded"></p>
+                <button onclick="copyText(document.getElementById('json-message').textContent, this)"
+                  class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p class="text-xs text-gray-500">priority（数字）</p>
+              <div class="flex gap-2 items-center">
+                <p id="json-priority" class="flex-1 text-xs text-green-300 break-all bg-gray-900 p-2 rounded">5</p>
+                <button onclick="copyText('5', this)"
+                  class="bg-green-600 active:bg-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap">📋</button>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
 
@@ -156,14 +201,22 @@
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">4</span>
-            <p class="text-gray-300">URL欄に上の「📋 URLをコピー」でコピーしたURLを貼り付ける</p>
+            <p class="text-gray-300">URL欄に <span class="text-white font-bold">https://ntfy.sh</span> を<span class="text-yellow-400">手入力</span>（コピペ不可・書式付きはエラー）</p>
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">5</span>
-            <p class="text-gray-300">「URLの内容を取得」の右の「<span class="text-white font-bold">＞</span>」をタップ → 方法を「<span class="text-white font-bold">GET</span>」に変更</p>
+            <p class="text-gray-300">「URLの内容を取得」の右の「<span class="text-white font-bold">＞</span>」をタップ → 方法を「<span class="text-white font-bold">POST</span>」に変更</p>
           </div>
           <div class="flex gap-3">
             <span class="text-blue-400 font-black min-w-[24px]">6</span>
+            <p class="text-gray-300">「本文を要求」で「<span class="text-white font-bold">JSON</span>」を選択</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">7</span>
+            <p class="text-gray-300">「<span class="text-white font-bold">新規フィールドを追加</span>」で上の<span class="text-white font-bold">②の4項目</span>を1つずつ追加（topic・title・messageは「テキスト」、priorityは「数字」）。値は各📋ボタンでコピー</p>
+          </div>
+          <div class="flex gap-3">
+            <span class="text-blue-400 font-black min-w-[24px]">8</span>
             <p class="text-gray-300">画面上部「URLの内容を取得」右の「<span class="text-white font-bold">∨</span>」をタップ → 名称を「<span class="text-white font-bold">院内SOS送信</span>」に変更 →「完了」</p>
           </div>
         </div>
@@ -249,9 +302,44 @@
         <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
       </div>
       <div>
-        <p class="text-green-400 text-sm font-bold">監視中</p>
-        <p class="text-gray-500 text-xs">5秒ごとに自動確認</p>
+        <p class="text-green-400 text-sm font-bold">リアルタイム監視中</p>
+        <p class="text-gray-500 text-xs">ntfy常時接続（最小化でも受信）</p>
       </div>
+    </div>
+
+    <!-- 全病棟受信モード -->
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <p class="text-sm font-bold text-gray-200">📡 全病棟のSOSを受信</p>
+        <span id="ra-status-badge" class="text-xs text-gray-500"></span>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="setReceiveAllMode('off')" data-ra="off"
+          class="ra-opt py-3 rounded-xl text-sm font-bold bg-gray-800">OFF</button>
+        <button onclick="setReceiveAllMode('on')" data-ra="on"
+          class="ra-opt py-3 rounded-xl text-sm font-bold bg-gray-800">常にON</button>
+        <button onclick="setReceiveAllMode('auto')" data-ra="auto"
+          class="ra-opt py-3 rounded-xl text-sm font-bold bg-gray-800">自動</button>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">
+        OFF＝自病棟のみ受信<br>
+        常にON＝事務PC・日祝の当直機など<br>
+        自動＝17:00〜翌9:00のみ全病棟（当直機の平日）
+      </p>
+      <p id="ra-status" class="text-xs text-blue-400"></p>
+    </div>
+
+    <!-- 音声有効化 -->
+    <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <p id="audio-status" class="text-yellow-400 text-sm font-bold">🔇 音声：タップで有効化</p>
+        <button onclick="testAlarm()" class="text-xs text-gray-300 bg-gray-700 px-3 py-1 rounded-full">音をテスト</button>
+      </div>
+      <button onclick="unlockAudio()"
+        class="w-full bg-blue-600 active:bg-blue-700 text-white text-sm font-bold py-3 rounded-xl">
+        🔊 アラーム音を有効にする
+      </button>
+      <p class="text-xs text-gray-500">※PCで使用する場合：このボタンを押してから最小化してください</p>
     </div>
 
     <!-- SOS履歴 -->
@@ -284,9 +372,22 @@
 
   <script>
     // ============================================================
-    // GAS エンドポイント
+    // エンドポイント設定
     // ============================================================
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
+    const GAS_URL  = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
+    const NTFY_URL = 'https://ntfy.sh';
+
+    // 病棟別 ntfy トピック
+    const WARD_TOPICS = {
+      '4階病棟': 'sos-4f-46c7d16ihj',
+      '5階病棟': 'sos-5f-1ubk7s5l8w',
+      '6階病棟': 'sos-6f-9er798nkq1',
+      '7階病棟': 'sos-7f-tbm7u01sxa',
+      '8階病棟': 'sos-8f-9ba6vhm67k',
+    };
+
+    // 当直師長用トピック（送信側は常時fan-out、当直機側はntfyアプリで購読して背景保険）
+    const NIGHT_TOPIC = 'sos-night-73zikbkv0x';
 
     // ============================================================
     // 病棟・部屋番号データ
@@ -302,7 +403,7 @@
     // ============================================================
     // 状態
     // ============================================================
-    let cfg = { ward: '', extension: '', holdMs: 1000, mode: 'sender' };
+    let cfg = { ward: '', extension: '', holdMs: 1000, mode: 'sender', receiveAllMode: 'off' };
     let holdTimer = null;
     let holdRaf = null;
     let holdStart = null;
@@ -317,7 +418,7 @@
 
       const saved = localStorage.getItem('sos-cfg');
       if (saved) {
-        cfg = JSON.parse(saved);
+        cfg = Object.assign({ receiveAllMode: 'off' }, JSON.parse(saved));
         applyDisplayValues();
 
         // ショートカットから ?sos=1 で起動された場合は即時送信
@@ -332,7 +433,8 @@
 
         if (cfg.mode === 'receiver') {
           showScreen('receiver');
-          startPolling();
+          startReceiving();
+          updateAudioStatus();
         } else {
           showScreen('sender');
         }
@@ -406,17 +508,18 @@
     }
 
     function startApp() {
-      stopPolling();
+      stopReceiving();
       if (cfg.mode === 'receiver') {
         showScreen('receiver');
-        startPolling();
+        unlockAudio();      // 開始ボタンのタップで音声を有効化
+        startReceiving();
       } else {
         showScreen('sender');
       }
     }
 
     function goSettings() {
-      stopPolling();
+      stopReceiving();
       selectWard(cfg.ward);
       selectHold(cfg.holdMs);
       selectMode(cfg.mode);
@@ -428,24 +531,26 @@
     }
 
     function showShortcutGuide() {
-      const url = `${GAS_URL}?action=sos&ward=${encodeURIComponent(cfg.ward)}&roomNumber=${encodeURIComponent('不明/緊急')}&extension=${encodeURIComponent(cfg.extension)}`;
-      document.getElementById('shortcut-url-text').textContent = url;
+      // ntfy へ直接POST する JSON項目（ショートカット用・病棟別トピック）
+      const topic = WARD_TOPICS[cfg.ward] || WARD_TOPICS['4階病棟'];
+      document.getElementById('json-topic').textContent   = topic;
+      document.getElementById('json-title').textContent   = 'SOS発生 ' + cfg.ward;
+      document.getElementById('json-message').textContent = '緊急応援をお願いします' + (cfg.extension ? ' 内線:' + cfg.extension : '');
       document.getElementById('shortcut-guide').classList.remove('hidden');
     }
 
-    function copyShortcutUrl() {
-      const url = document.getElementById('shortcut-url-text').textContent;
-      navigator.clipboard.writeText(url).then(() => {
-        const btn = event.target;
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
         btn.textContent = '✅ コピーしました';
-        setTimeout(() => { btn.textContent = '📋 URLをコピー'; }, 2000);
+        setTimeout(() => { btn.textContent = orig; }, 2000);
       });
     }
 
     function applyDisplayValues() {
       document.getElementById('disp-ward').textContent = cfg.ward;
       document.getElementById('disp-extension').textContent = cfg.extension || '未設定';
-      document.getElementById('recv-ward-label').textContent = `監視病棟：${cfg.ward}`;
+      updateReceiveAllUI();
       buildRoomList();
     }
 
@@ -525,25 +630,33 @@
     async function sendSOS(roomNumber) {
       if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
 
-      const payload = {
-        ward:       cfg.ward,
-        roomNumber: roomNumber,
-        extension:  cfg.extension || '',
-        timestamp:  new Date().toISOString()
-      };
+      const ward      = cfg.ward;
+      const extension = cfg.extension || '';
+      const room      = roomNumber === '不明/緊急' ? '緊急（部屋不明）' : roomNumber + '号室';
 
+      // 送信完了を即表示（待たずに見せる）
       showSuccess(roomNumber);
 
-      try {
-        await fetch(GAS_URL, {
-          method:  'POST',
-          mode:    'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body:    JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.error('送信エラー:', err);
-      }
+      // 1. ntfy へ直接送信（病棟トピック + 当直師長トピックへfan-out）
+      const wardTopic = WARD_TOPICS[ward] || WARD_TOPICS['4階病棟'];
+      const payloadBase = {
+        title:    'SOS発生 ' + ward,
+        message:  room + 'に応援をお願いします' + (extension ? ' 内線:' + extension : ''),
+        priority: 5,
+        tags:     ['rotating_light', 'sos']
+      };
+      [wardTopic, NIGHT_TOPIC].forEach(t => {
+        fetch(NTFY_URL, {
+          method: 'POST',
+          body: JSON.stringify(Object.assign({ topic: t }, payloadBase))
+        }).catch(err => console.error('ntfy送信エラー(' + t + '):', err));
+      });
+
+      // 2. GAS へログ記録（バックグラウンド）
+      const params = new URLSearchParams({
+        action: 'sos', ward, roomNumber, extension
+      });
+      fetch(`${GAS_URL}?${params}`).catch(err => console.error('GASログエラー:', err));
     }
 
     function showSuccess(room) {
@@ -557,43 +670,174 @@
     }
 
     // ============================================================
-    // 受信モード：ポーリング
+    // 緊急アラーム音（Web Audio API・連続鼓動）
     // ============================================================
-    function startPolling() {
-      lastCheck = new Date().toISOString();
-      checkForSOS();
-      polling = setInterval(checkForSOS, 5000);
-    }
+    let audioCtx   = null;
+    let alarmOn    = false;
+    let alarmTimer = null;
 
-    function stopPolling() {
-      if (polling) { clearInterval(polling); polling = null; }
-    }
-
-    async function checkForSOS() {
-      if (!GAS_URL || GAS_URL === 'YOUR_GAS_WEB_APP_URL_HERE') return;
-      try {
-        const url = `${GAS_URL}?action=check&ward=${encodeURIComponent(cfg.ward)}&since=${encodeURIComponent(lastCheck)}`;
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data.events && data.events.length > 0) {
-          lastCheck = new Date().toISOString();
-          showAlert(data.events[0]);
-          renderHistory(data.events);
-        }
-      } catch (err) {
-        console.error('ポーリングエラー:', err);
+    function unlockAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { return; }
       }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      updateAudioStatus();
+    }
+
+    function updateAudioStatus() {
+      const el = document.getElementById('audio-status');
+      if (!el) return;
+      const ready = audioCtx && audioCtx.state === 'running';
+      el.textContent = ready ? '🔊 音声：有効（受信時に鳴動）' : '🔇 音声：タップで有効化';
+      el.className   = ready ? 'text-green-400 text-sm font-bold' : 'text-yellow-400 text-sm font-bold';
+    }
+
+    function beep(freq, start, dur) {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      const t0 = audioCtx.currentTime + start;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.5, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    }
+
+    function startAlarm() {
+      unlockAudio();
+      if (!audioCtx || alarmOn) return;
+      alarmOn = true;
+      const loop = () => {
+        if (!alarmOn) return;
+        // 二重音サイレン（ピーポー）
+        beep(880, 0,    0.25);
+        beep(660, 0.32, 0.25);
+        if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+        alarmTimer = setTimeout(loop, 850);
+      };
+      loop();
+    }
+
+    function stopAlarm() {
+      alarmOn = false;
+      if (alarmTimer) { clearTimeout(alarmTimer); alarmTimer = null; }
+    }
+
+    function testAlarm() {
+      unlockAudio();
+      startAlarm();
+      setTimeout(stopAlarm, 2500);
+    }
+
+    // ============================================================
+    // 受信モード：ntfy SSE リアルタイム接続
+    // ============================================================
+    let sseConns    = [];
+    let recvHistory = [];
+    let modeCheckTimer = null;
+
+    // 現在の実効「全件受信」判定（auto は 17:00〜翌9:00 のみtrue）
+    function isReceivingAll() {
+      const m = cfg.receiveAllMode || 'off';
+      if (m === 'on')  return true;
+      if (m === 'off') return false;
+      const h = new Date().getHours();
+      return h >= 17 || h < 9;
+    }
+
+    function labelReceiveAllMode(m) {
+      return m === 'on' ? '常にON' : m === 'auto' ? '自動' : 'OFF';
+    }
+
+    function updateReceiveAllUI() {
+      const mode   = cfg.receiveAllMode || 'off';
+      const active = isReceivingAll();
+      const label  = document.getElementById('recv-ward-label');
+      if (label) {
+        label.textContent = active ? '監視範囲：全病棟' : `監視病棟：${cfg.ward}`;
+      }
+      document.querySelectorAll('.ra-opt').forEach(b =>
+        b.className = b.dataset.ra === mode
+          ? 'ra-opt py-3 rounded-xl text-sm font-bold bg-blue-600'
+          : 'ra-opt py-3 rounded-xl text-sm font-bold bg-gray-800'
+      );
+      const badge  = document.getElementById('ra-status-badge');
+      const status = document.getElementById('ra-status');
+      if (badge)  badge.textContent  = `現在：${labelReceiveAllMode(mode)}`;
+      if (status) status.textContent = `今この瞬間の受信範囲：${active ? '全病棟' : '自病棟のみ'}`;
+    }
+
+    function setReceiveAllMode(m) {
+      cfg.receiveAllMode = m;
+      localStorage.setItem('sos-cfg', JSON.stringify(cfg));
+      updateReceiveAllUI();
+      if (cfg.mode === 'receiver') startReceiving(); // 接続張り直し
+    }
+
+    function startReceiving() {
+      stopReceiving();
+      const topics = isReceivingAll()
+        ? Object.values(WARD_TOPICS)
+        : [WARD_TOPICS[cfg.ward]].filter(Boolean);
+
+      topics.forEach(topic => {
+        const conn = new EventSource('https://ntfy.sh/' + topic + '/sse');
+        conn.onmessage = (e) => {
+          let data;
+          try { data = JSON.parse(e.data); } catch (err) { return; }
+          if (data.event !== 'message') return;
+          const ev = {
+            timestamp: new Date(data.time ? data.time * 1000 : Date.now()).toISOString(),
+            ward:      cfg.ward,
+            title:     data.title   || 'SOS発生',
+            message:   data.message || ''
+          };
+          recvHistory.unshift(ev);
+          showAlert(ev);
+          startAlarm();
+          renderHistory(recvHistory);
+        };
+        conn.onerror = () => { /* EventSourceが自動再接続 */ };
+        sseConns.push(conn);
+      });
+
+      updateReceiveAllUI();
+      startModeCheck();
+    }
+
+    function stopReceiving() {
+      sseConns.forEach(c => c.close());
+      sseConns = [];
+      stopModeCheck();
+      stopAlarm();
+    }
+
+    // 自動モードの時刻境界（9:00/17:00）を跨いだら接続を張り直す
+    function startModeCheck() {
+      stopModeCheck();
+      modeCheckTimer = setInterval(() => {
+        if (cfg.mode !== 'receiver' || cfg.receiveAllMode !== 'auto') return;
+        const desired = isReceivingAll();
+        const actual  = sseConns.length > 1; // 自病棟のみ=1本、全件=5本
+        if (desired !== actual) startReceiving();
+        else updateReceiveAllUI();
+      }, 60 * 1000);
+    }
+
+    function stopModeCheck() {
+      if (modeCheckTimer) { clearInterval(modeCheckTimer); modeCheckTimer = null; }
     }
 
     function showAlert(ev) {
-      if (navigator.vibrate) navigator.vibrate([500,200,500,200,500,200,1000]);
+      if (navigator.vibrate) navigator.vibrate([500,200,500,200,500]);
       const time = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
-      const room = ev.roomNumber === '不明/緊急' ? '部屋番号不明' : ev.roomNumber + '号室';
-      const ext  = ev.extension ? `📞 内線 ${ev.extension}` : '';
       document.getElementById('alert-body').innerHTML = `
-        <p>🏥 ${ev.ward}</p>
-        <p>🚪 ${room}</p>
-        ${ext ? `<p>${ext}</p>` : ''}
+        <p>🏥 ${ev.title || ev.ward}</p>
+        <p>${ev.message || ''}</p>
         <p>🕐 ${time}</p>
       `;
       document.getElementById('alert-overlay').classList.add('show');
@@ -601,20 +845,23 @@
 
     function dismissAlert() {
       document.getElementById('alert-overlay').classList.remove('show');
+      stopAlarm();
     }
 
     function renderHistory(events) {
       const el = document.getElementById('sos-history');
+      if (!events.length) {
+        el.innerHTML = '<p class="text-gray-600 text-sm text-center py-8">SOSはまだ届いていません</p>';
+        return;
+      }
       el.innerHTML = events.slice(0, 20).map(ev => {
-        const t    = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
-        const room = ev.roomNumber === '不明/緊急' ? '部屋番号不明' : ev.roomNumber + '号室';
-        const ext  = ev.extension ? `内線 ${ev.extension}` : '';
+        const t = new Date(ev.timestamp).toLocaleTimeString('ja-JP');
         return `
           <div class="bg-red-950 border border-red-800 rounded-2xl px-4 py-3 mb-3">
             <div class="flex justify-between items-start">
               <div>
-                <p class="font-bold text-red-300">${ev.ward} / ${room}</p>
-                ${ext ? `<p class="text-yellow-400 text-sm font-bold">${ext}</p>` : ''}
+                <p class="font-bold text-red-300">${ev.title || ev.ward}</p>
+                <p class="text-yellow-400 text-sm">${ev.message || ''}</p>
               </div>
               <p class="text-xs text-gray-500 mt-1">${t}</p>
             </div>

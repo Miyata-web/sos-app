@@ -34,12 +34,21 @@ function doGet(e) {
     const since      = e.parameter.since ? new Date(e.parameter.since) : new Date(0);
 
     if (action === 'sos') {
-      const extension  = e.parameter.extension || '';
-      const sheet      = getOrCreateSheet();
-      const now        = new Date();
-      const ntfyStatus = sendNtfy({ ward, roomNumber, extension, timestamp: now.toISOString() });
-      sheet.appendRow([now, ward, roomNumber, extension, now, ntfyStatus]);
-      return jsonResponse({ success: true, ntfyStatus });
+      const extension = e.parameter.extension || '';
+      const sheet     = getOrCreateSheet();
+      const now       = new Date();
+      // アプリ・ショートカットがTelegramへ直接送信するためGAS側は記録のみ
+      sheet.appendRow([now, ward, roomNumber, extension, now, 'アプリ送信']);
+      return jsonResponse({ success: true });
+    }
+
+    // アプリからのログ記録のみ（Telegram通知なし・高速化対応）
+    if (action === 'log') {
+      const extension = e.parameter.extension || '';
+      const ts        = e.parameter.timestamp ? new Date(e.parameter.timestamp) : new Date();
+      const sheet     = getOrCreateSheet();
+      sheet.appendRow([ts, ward, roomNumber, extension, new Date(), 'アプリ送信']);
+      return jsonResponse({ success: true });
     }
 
     if (action === 'check') {
@@ -82,25 +91,40 @@ function getOrCreateSheet() {
 }
 
 // ============================================================
-// Cloudflare Worker経由でntfy.shに通知
+// ntfy.shで通知（iPhoneから直接送信・GASはログのみ）
 // 戻り値：通知結果メッセージ（スプシに記録）
 // ============================================================
 function sendNtfy(data) {
   try {
-    const res  = UrlFetchApp.fetch('https://sos-ntfy-proxy.mx1vm1122.workers.dev/', {
-      method:               'POST',
-      contentType:          'application/json',
-      payload:              JSON.stringify({
-        ward:       data.ward       || '',
-        roomNumber: data.roomNumber || '不明/緊急',
-        extension:  data.extension  || ''
+    const WARD_TOPICS = {
+      '4階病棟': 'sos-4f-46c7d16ihj',
+      '5階病棟': 'sos-5f-1ubk7s5l8w',
+      '6階病棟': 'sos-6f-9er798nkq1',
+      '7階病棟': 'sos-7f-tbm7u01sxa',
+      '8階病棟': 'sos-8f-9ba6vhm67k',
+    };
+
+    const ward       = data.ward       || '不明';
+    const roomNumber = data.roomNumber || '不明/緊急';
+    const extension  = data.extension  || '';
+    const topic      = WARD_TOPICS[ward] || WARD_TOPICS['4階病棟'];
+    const room       = roomNumber === '不明/緊急' ? '緊急（部屋不明）' : roomNumber + '号室';
+    const message    = room + 'に応援をお願いします' + (extension ? ' 内線:' + extension : '');
+
+    const res = UrlFetchApp.fetch('https://ntfy.sh', {
+      method:             'POST',
+      contentType:        'application/json',
+      payload:            JSON.stringify({
+        topic:    topic,
+        title:    'SOS発生 ' + ward,
+        message:  message,
+        priority: 5,
+        tags:     ['rotating_light', 'sos']
       }),
-      muteHttpExceptions:   true
+      muteHttpExceptions: true
     });
-    const body   = JSON.parse(res.getContentText());
-    const status = body.ntfyStatus || res.getResponseCode();
-    if (status === 200) return '通知OK';
-    return '通知NG(' + status + ')';
+    if (res.getResponseCode() === 200) return '通知OK';
+    return '通知NG(' + res.getResponseCode() + ')';
   } catch (err) {
     return 'エラー:' + err.message;
   }

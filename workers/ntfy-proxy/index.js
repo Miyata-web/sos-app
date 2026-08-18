@@ -1,20 +1,15 @@
-// ============================================================
-// Cloudflare Worker: ntfy.sh プロキシ
-// GAS → このWorker → ntfy.sh の順に中継する
-// ============================================================
-
 const NTFY_TOPICS = {
-  '4階病棟': 'sos-byoin-4f',
-  '5階病棟': 'sos-byoin-5f',
-  '6階病棟': 'sos-byoin-6f',
-  '7階病棟': 'sos-byoin-7f',
-  '8階病棟': 'sos-byoin-8f'
+  '4階病棟': 'sos-4f-prod',
+  '5階病棟': 'sos-5f-prod',
+  '6階病棟': 'sos-6f-prod',
+  '7階病棟': 'sos-7f-prod',
+  '8階病棟': 'sos-8f-prod'
 };
+
+const NTFY_TOKEN = 'tk_bdzevicdnl9gjfl0smezdri83ianr';
 
 export default {
   async fetch(request) {
-
-    // CORS対応
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -50,9 +45,10 @@ export default {
       const ntfyRes = await fetch(`https://ntfy.sh/${topic}`, {
         method: 'POST',
         headers: {
-          'Title':    `🚨 SOS発生 — ${ward}`,
-          'Priority': 'urgent',
-          'Tags':     'rotating_light,sos',
+          'Title':         `🚨 SOS発生 — ${ward}`,
+          'Priority':      'urgent',
+          'Tags':          'rotating_light,sos',
+          'Authorization': `Bearer ${NTFY_TOKEN}`,
         },
         body: `${room}${ext}に応援をお願いします`
       });
