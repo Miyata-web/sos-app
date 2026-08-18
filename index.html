@@ -84,13 +84,16 @@
       <div id="ward-selector" class="grid grid-cols-1 gap-3"></div>
     </div>
 
-    <!-- 内線番号 -->
+    <!-- 内線番号 / 端末名 -->
     <div class="space-y-2">
-      <label class="text-sm text-gray-400 font-bold">このiPhoneの内線番号</label>
-      <input id="input-extension" type="tel" inputmode="numeric" placeholder="例：1234"
+      <label class="text-sm text-gray-400 font-bold">この端末の識別名</label>
+      <input id="input-extension" type="text" placeholder="例：1234 / 事務部PC / 当直機"
         class="w-full bg-gray-800 border border-gray-600 text-white text-xl font-bold px-4 py-4 rounded-2xl focus:outline-none focus:border-blue-500"
         oninput="cfg.extension = this.value.trim()">
-      <p class="text-xs text-gray-500">Nsステーションの端末管理表に対応する内線番号を入力</p>
+      <p class="text-xs text-gray-500 leading-relaxed">
+        iPhoneの場合：Nsステーションの端末管理表の内線番号<br>
+        PCの場合：「事務部PC」「当直機」など識別できる名称
+      </p>
     </div>
 
     <!-- 長押し時間 -->
@@ -450,7 +453,8 @@
     // ============================================================
     function buildWardSelector() {
       const el = document.getElementById('ward-selector');
-      Object.keys(WARDS).forEach(w => {
+      const options = Object.keys(WARDS).concat(['全病棟（受信専用）']);
+      options.forEach(w => {
         const btn = document.createElement('button');
         btn.dataset.ward = w;
         btn.textContent = w;
@@ -467,6 +471,12 @@
           ? 'ward-opt py-4 rounded-2xl font-bold text-lg bg-blue-600 text-left px-5'
           : 'ward-opt py-4 rounded-2xl font-bold text-lg bg-gray-800 text-left px-5'
       );
+      // 全病棟選択時は自動で受信モード＋全病棟受信ONに切替
+      if (w === '全病棟（受信専用）') {
+        cfg.mode = 'receiver';
+        cfg.receiveAllMode = 'on';
+        selectMode('receiver');
+      }
     }
 
     function selectHold(ms) {
