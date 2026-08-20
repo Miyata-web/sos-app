@@ -284,9 +284,13 @@
     </div>
 
     <!-- 部屋番号リスト -->
-    <div class="flex-1 overflow-y-auto px-4 pt-4 pb-8">
-      <p class="text-gray-500 text-xs mb-3">▼ 部屋をタップ → 即時送信</p>
+    <div id="room-section" class="flex-1 overflow-y-auto px-4 pt-4 pb-8">
+      <p id="room-list-label" class="text-gray-500 text-xs mb-3">▼ 部屋をタップ → 即時送信</p>
       <div id="room-list" class="grid grid-cols-3 gap-3"></div>
+      <p id="no-room-note" class="hidden text-gray-500 text-sm text-center leading-relaxed mt-8">
+        このエリアには部屋番号がありません。<br>
+        上のSOSボタンを<span class="text-white font-bold">長押し</span>して発報してください。
+      </p>
     </div>
   </div>
 
@@ -311,10 +315,10 @@
       </div>
     </div>
 
-    <!-- 全病棟受信モード -->
+    <!-- 全エリア受信モード -->
     <div class="bg-gray-900 border border-gray-700 rounded-2xl p-4 space-y-3">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-bold text-gray-200">📡 全病棟のSOSを受信</p>
+        <p class="text-sm font-bold text-gray-200">📡 全エリアのSOSを受信</p>
         <span id="ra-status-badge" class="text-xs text-gray-500"></span>
       </div>
       <div class="grid grid-cols-3 gap-2">
@@ -326,9 +330,9 @@
           class="ra-opt py-3 rounded-xl text-sm font-bold bg-gray-800">自動</button>
       </div>
       <p class="text-xs text-gray-500 leading-relaxed">
-        OFF＝自病棟のみ受信<br>
+        OFF＝自エリアのみ受信<br>
         常にON＝事務PC・日祝の当直機など<br>
-        自動＝17:00〜翌9:00のみ全病棟（当直機の平日）
+        自動＝17:00〜翌9:00のみ全エリア（当直機の平日）
       </p>
       <p id="ra-status" class="text-xs text-blue-400"></p>
     </div>
@@ -381,13 +385,18 @@
     const GAS_URL  = 'https://script.google.com/macros/s/AKfycbxVWgk2GcZnJplV3ZSiJ14yjkrOwa3xGoDduaptepugY1izGenSLPmtgumwIH_jfA4D/exec';
     const NTFY_URL = 'https://ntfy.sh';
 
-    // 病棟別 ntfy トピック
+    // 病棟・エリア別 ntfy トピック
     const WARD_TOPICS = {
-      '4階病棟': 'sos-4f-46c7d16ihj',
-      '5階病棟': 'sos-5f-1ubk7s5l8w',
-      '6階病棟': 'sos-6f-9er798nkq1',
-      '7階病棟': 'sos-7f-tbm7u01sxa',
-      '8階病棟': 'sos-8f-9ba6vhm67k',
+      '4階病棟':   'sos-4f-46c7d16ihj',
+      '5階病棟':   'sos-5f-1ubk7s5l8w',
+      '6階病棟':   'sos-6f-9er798nkq1',
+      '7階病棟':   'sos-7f-tbm7u01sxa',
+      '8階病棟':   'sos-8f-9ba6vhm67k',
+      'ICU':      'sos-icu-37d34f04f4',
+      'HCU':      'sos-hcu-298b6e89a8',
+      'ER':       'sos-er-5869dc935a',
+      '外来':     'sos-op-9e3cb90c96',
+      'その他部署': 'sos-oth-1537f5d775',
     };
 
     // 当直師長用トピック（送信側は常時fan-out、当直機側はntfyアプリで購読して背景保険）
@@ -397,11 +406,16 @@
     // 病棟・部屋番号データ
     // ============================================================
     const WARDS = {
-      '4階病棟': [401,402,403,405,406,407,408,410,411,412,413,415,416,417,418,430,431,432,433,435,436,437,438],
-      '5階病棟': [501,502,503,505,506,507,508,510,511,512,513,515,516,517,518,520,521,522,523,525,526,527,528],
-      '6階病棟': [601,602,603,605,606,607,608,610,611,612,613,615,616,617,618,620,621,622,623,625,626,627,628],
-      '7階病棟': [701,702,703,705,706,707,708,710,712,713,715,716,717,718,720,721,722,723,725,726,727,728],
-      '8階病棟': [801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823]
+      '4階病棟':   [401,402,403,405,406,407,408,410,411,412,413,415,416,417,418,430,431,432,433,435,436,437,438],
+      '5階病棟':   [501,502,503,505,506,507,508,510,511,512,513,515,516,517,518,520,521,522,523,525,526,527,528],
+      '6階病棟':   [601,602,603,605,606,607,608,610,611,612,613,615,616,617,618,620,621,622,623,625,626,627,628],
+      '7階病棟':   [701,702,703,705,706,707,708,710,712,713,715,716,717,718,720,721,722,723,725,726,727,728],
+      '8階病棟':   [801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823],
+      'ICU':      [],
+      'HCU':      [],
+      'ER':       [],
+      '外来':     [],
+      'その他部署': []
     };
 
     // ============================================================
@@ -454,7 +468,7 @@
     // ============================================================
     function buildWardSelector() {
       const el = document.getElementById('ward-selector');
-      const options = Object.keys(WARDS).concat(['全病棟（受信専用）']);
+      const options = Object.keys(WARDS).concat(['全エリア（受信専用）']);
       options.forEach(w => {
         const btn = document.createElement('button');
         btn.dataset.ward = w;
@@ -472,8 +486,8 @@
           ? 'ward-opt py-4 rounded-2xl font-bold text-lg bg-blue-600 text-left px-5'
           : 'ward-opt py-4 rounded-2xl font-bold text-lg bg-gray-800 text-left px-5'
       );
-      // 全病棟選択時は自動で受信モード＋全病棟受信ONに切替
-      if (w === '全病棟（受信専用）') {
+      // 全エリア選択時は自動で受信モード＋全エリア受信ONに切替
+      if (w === '全エリア（受信専用）') {
         cfg.mode = 'receiver';
         cfg.receiveAllMode = 'on';
         selectMode('receiver');
@@ -569,9 +583,19 @@
     // 部屋番号リスト生成
     // ============================================================
     function buildRoomList() {
-      const list = document.getElementById('room-list');
+      const list  = document.getElementById('room-list');
+      const label = document.getElementById('room-list-label');
+      const note  = document.getElementById('no-room-note');
       list.innerHTML = '';
-      (WARDS[cfg.ward] || []).forEach(r => {
+      const rooms = WARDS[cfg.ward] || [];
+      if (rooms.length === 0) {
+        label.classList.add('hidden');
+        note.classList.remove('hidden');
+        return;
+      }
+      label.classList.remove('hidden');
+      note.classList.add('hidden');
+      rooms.forEach(r => {
         const btn = document.createElement('button');
         btn.className = 'room-btn bg-gray-800 border border-gray-700 text-white text-2xl font-black py-5 rounded-2xl';
         btn.style.touchAction = 'manipulation';
@@ -769,7 +793,7 @@
       const active = isReceivingAll();
       const label  = document.getElementById('recv-ward-label');
       if (label) {
-        label.textContent = active ? '監視範囲：全病棟' : `監視病棟：${cfg.ward}`;
+        label.textContent = active ? '監視範囲：全エリア' : `監視病棟：${cfg.ward}`;
       }
       document.querySelectorAll('.ra-opt').forEach(b =>
         b.className = b.dataset.ra === mode
@@ -779,7 +803,7 @@
       const badge  = document.getElementById('ra-status-badge');
       const status = document.getElementById('ra-status');
       if (badge)  badge.textContent  = `現在：${labelReceiveAllMode(mode)}`;
-      if (status) status.textContent = `今この瞬間の受信範囲：${active ? '全病棟' : '自病棟のみ'}`;
+      if (status) status.textContent = `今この瞬間の受信範囲：${active ? '全エリア' : '自エリアのみ'}`;
     }
 
     function setReceiveAllMode(m) {
@@ -833,7 +857,7 @@
       modeCheckTimer = setInterval(() => {
         if (cfg.mode !== 'receiver' || cfg.receiveAllMode !== 'auto') return;
         const desired = isReceivingAll();
-        const actual  = sseConns.length > 1; // 自病棟のみ=1本、全件=5本
+        const actual  = sseConns.length > 1; // 自エリアのみ=1本、全件=5本
         if (desired !== actual) startReceiving();
         else updateReceiveAllUI();
       }, 60 * 1000);
