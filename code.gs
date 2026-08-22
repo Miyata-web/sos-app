@@ -1,4 +1,4 @@
-const SPREADSHEET_ID = '1JTk_Bra0tgfhc1Af1FAXkPiZGma-y_z7-6RKVV80SWc';
+const SPREADSHEET_ID = '1oxiws3Bh37vilWVX8LG6TUTizpzlWSq_UmMS672sB28';
 const SHEET_NAME     = 'SOS記録';
 
 // ============================================================
