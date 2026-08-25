@@ -382,7 +382,7 @@
     // ============================================================
     // エンドポイント設定
     // ============================================================
-    const GAS_URL  = 'https://script.google.com/a/macros/kg.shinkomonji-hp.jp/s/AKfycby1ck2kefN0GiK9i7ftU8jYrMkmr7XuuVf7lQIRYV4CrOxrSPDFkUqBYXYz0opmgRq1rQ/exec';
+    const LOG_URL  = 'https://sos-ntfy-proxy.mx1vm1122.workers.dev/log';
     const NTFY_URL = 'https://ntfy.sh';
 
     // 病棟・エリア別 ntfy トピック
@@ -687,11 +687,12 @@
         }).catch(err => console.error('ntfy送信エラー(' + t + '):', err));
       });
 
-      // 2. GAS へログ記録（バックグラウンド）
-      const params = new URLSearchParams({
-        action: 'sos', ward, roomNumber, extension
-      });
-      fetch(`${GAS_URL}?${params}`).catch(err => console.error('GASログエラー:', err));
+      // 2. Cloudflare Worker へログ記録（バックグラウンド）
+      fetch(LOG_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ward, roomNumber, extension })
+      }).catch(err => console.error('ログ記録エラー:', err));
     }
 
     function showSuccess(room) {

@@ -2,3 +2,11 @@ name = "sos-ntfy-proxy"
 main = "index.js"
 compatibility_date = "2024-01-01"
 account_id = "a681d4394ab667a0d79b3231a21a1303"
+
+# 発報ログ用KVネームスペース
+# 作成コマンド:
+#   npx wrangler kv namespace create SOS_LOG
+# 実行後、返ってきた id を下記に貼り付ける
+[[kv_namespaces]]
+binding = "SOS_LOG"
+id = "41be81f3c04646c9acc6860fbda84966"
