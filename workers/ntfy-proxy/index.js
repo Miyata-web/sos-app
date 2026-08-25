@@ -117,11 +117,19 @@ async function handleLogList(request, env) {
     });
   }
   if (format === 'csv') {
-    const header = 'timestamp,ward,roomNumber,extension';
-    const rows = records.map(r =>
-      [r.timestamp, r.ward, r.roomNumber, r.extension]
-        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
-    );
+    const csvFmt = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false,
+    });
+    const header = '発生時刻(JST),エリア,部屋番号,端末識別名';
+    const rows = records.map(r => {
+      let jst = r.timestamp;
+      try { jst = csvFmt.format(new Date(r.timestamp)); } catch {}
+      return [jst, r.ward, r.roomNumber, r.extension]
+        .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+    });
     return new Response('﻿' + [header, ...rows].join('\n'), {
       headers: {
         'Content-Type':        'text/csv; charset=utf-8',
@@ -129,10 +137,20 @@ async function handleLogList(request, env) {
       },
     });
   }
-  // default: HTML
+  // default: HTML — 時刻はJSTに変換して表示
+  const jstFmt = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const toJst = iso => {
+    try { return jstFmt.format(new Date(iso)); }
+    catch { return iso; }
+  };
   const rowsHtml = records.map(r => `
     <tr>
-      <td>${escapeHtml(r.timestamp)}</td>
+      <td>${escapeHtml(toJst(r.timestamp))}</td>
       <td>${escapeHtml(r.ward)}</td>
       <td>${escapeHtml(r.roomNumber)}</td>
       <td>${escapeHtml(r.extension)}</td>
