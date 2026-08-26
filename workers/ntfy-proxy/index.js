@@ -98,7 +98,7 @@ function checkBasicAuth(request, env) {
 
 async function handleLogList(request, env) {
   if (!env.SOS_LOG) return new Response('KV not bound', { status: 500 });
-  if (!checkBasicAuth(request, env)) return unauthorized();
+  // 認証なし：URL自体を秘匿情報として運用（患者情報を含まないため）
 
   const url    = new URL(request.url);
   const limit  = Math.min(parseInt(url.searchParams.get('limit') || '200', 10), 1000);
